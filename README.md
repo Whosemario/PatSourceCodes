@@ -3,6 +3,9 @@ PAT上的题目，把重要的题目做了总结
 ##problem 1010
 long long 类型可以达到目的，结果要用二分查找
 
+##problem 1011
+其实不想说这道题了，但此题用double就会WA，float就AC了，难道是精度原因，不可能啊，double的精度明显比float高
+
 ##problem 1018
 最短路的变体，路径查找的时候做了一些小改动
 
