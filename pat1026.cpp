@@ -38,13 +38,14 @@ int main() {
 		int h,m,s;
 		int p,v;
 		scanf("%d:%d:%d %d %d",&h,&m,&s,&p,&v);
+		if(h*3600+m*60+s < 8*3600 || h*3600+m*60+s > 21*3600) continue;
 		if(v==0){
 			simarr[simsz].start = h*3600+m*60+s;
-			simarr[simsz++].play = p*60;
+			simarr[simsz++].play = p*60 > 7200 ? 7200 : p*60;  //用户只能玩2个小时，大于2个小时看成2个小时
 		}
 		else{
 			viparr[vipsz].start = h*3600+m*60+s;
-			viparr[vipsz++].play = p*60;
+			viparr[vipsz++].play = p*60 > 7200 ? 7200 : p*60;
 		}
 	}
 	sort(simarr,simarr+simsz,cmp1);
@@ -59,16 +60,25 @@ int main() {
 	}
 	int end = 21*3600;
 	int i=0,j=0;
+	N = simsz+vipsz;
 	for(int k=0;k<N;k++){
-		if((i<vipsz && j==simsz) || viparr[i].start < simarr[j].start){
+		if((i<vipsz && j==simsz) || (i<vipsz && viparr[i].start < simarr[j].start)){
 			int ind = -1;
-			int _min = servetime[0];
+			int _min = -1;
 			for(int l=0;l<K;l++)
-				if(isvip[l]&&servetime[i]<=viparr[i].start){
-					ind = i;
-					_min = servetime[i];
+				if(isvip[l]&&(servetime[l]<=viparr[i].start)){
+					ind = l;
+					_min = servetime[l];
 					break;
 				}
+			if(ind==-1){
+				for(int l=0;l<K;l++)
+					if(servetime[l]<=viparr[i].start){
+						ind = l;
+						_min = servetime[l];
+						break;
+					}
+			}
 			if(ind==-1){
 				ind = 0;
 				_min = servetime[0];
@@ -85,11 +95,32 @@ int main() {
 			servetime[ind] = res[sz].serve + viparr[i].play;
 			sz++;
 			i++;
-			num[ind]++;
+			if(res[sz-1].serve < end)
+				num[ind]++;
 		}
 		else{
-			int ind = 0;
-			int _min = servetime[0];
+			int ind = -1;
+			int _min = -1;
+			for(int l=0;l<K;l++)
+				if(servetime[l]<=simarr[j].start){
+					ind = l;
+					_min = servetime[l];
+					break;
+				}
+			if(ind!=-1){
+				if(_min >= end) break;
+				res[sz].start = simarr[j].start;
+				res[sz].serve = _min > simarr[j].start ? _min : simarr[j].start;
+				res[sz].wait = _min > simarr[j].start ? _min-simarr[j].start : 0;
+				servetime[ind] = res[sz].serve + simarr[j].play;
+				sz++;
+				j++;
+				if(res[sz-1].serve < end)
+					num[ind]++;
+				continue;
+			}
+			ind = 0;
+			_min = servetime[0];
 			for(int l=0;l<K;l++)
 				if(servetime[l] < _min){
 					ind =l;
@@ -104,7 +135,8 @@ int main() {
 					servetime[ind] = res[sz].serve + viparr[i].play;
 					sz++;
 					i++;
-					num[ind]++;
+					if(res[sz-1].serve < end)
+						num[ind]++;
 					continue;
 				}
 			}
@@ -114,16 +146,18 @@ int main() {
 			servetime[ind] = res[sz].serve + simarr[j].play;
 			sz++;
 			j++;
-			num[ind]++;
+			if(res[sz-1].serve < end)
+				num[ind]++;
 		}
 	}
 
 	sort(res,res+sz,cmp2);
 	for(int i=0;i<sz;i++){
-		printf("%02d:%02d:%02d %02d:%02d:%02d %d\n",
-				res[i].start/3600,res[i].start/60%60,res[i].start%60,
-				res[i].serve/3600,res[i].serve/60%60,res[i].serve%60,
-				(res[i].wait+30)/60);
+		if(res[i].serve < end)
+			printf("%02d:%02d:%02d %02d:%02d:%02d %d\n",
+					res[i].start/3600,res[i].start/60%60,res[i].start%60,
+					res[i].serve/3600,res[i].serve/60%60,res[i].serve%60,
+					(res[i].wait+30)/60);
 	}
 	printf("%d",num[0]);
 	for(int i=1;i<K;i++)
